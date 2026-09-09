@@ -1,0 +1,69 @@
+require('dotenv').config();
+
+function requireEnv(name) {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
+}
+
+function optionalEnv(name, defaultValue = '') {
+  return process.env[name] || defaultValue;
+}
+
+// Standalone (bot-less) mode: enabled when EVENT_IDS is set or STANDALONE_MODE=true.
+// In this mode no Discord bot token / guild is needed — event IDs are supplied
+// manually (right-click Raid-Helper message -> Copy Message ID) and all polling
+// goes directly to the public Raid-Helper API.
+const standaloneEventIds = (process.env.EVENT_IDS || '')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
+const standaloneMode = process.env.STANDALONE_MODE === 'true' || standaloneEventIds.length > 0;
+
+module.exports = {
+  standalone: {
+    enabled: standaloneMode,
+    eventIds: standaloneEventIds,
+  },
+  discord: {
+    botToken: standaloneMode ? optionalEnv('DISCORD_BOT_TOKEN') : requireEnv('DISCORD_BOT_TOKEN'),
+    guildId: standaloneMode ? optionalEnv('GUILD_ID') : requireEnv('GUILD_ID'),
+    // Personal-login (user-token) mode: read-only REST polling with your own
+    // account. Needed only for `npm run usertoken`. WARNING: automating a user
+    // account violates Discord ToS — read the header comment in usertoken.js.
+    userToken: optionalEnv('DISCORD_USER_TOKEN'),
+    eventsChannelIds: (process.env.EVENTS_CHANNEL_IDS || '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean),
+    eventsCategoryIds: (process.env.EVENTS_CATEGORY_IDS || '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean),
+    raidHelperBotUserId: process.env.RAIDHELPER_BOT_USER_ID || '579155972115660803',
+    myUserId: requireEnv('MY_DISCORD_USER_ID'),
+  },
+  // Raid-Helper's `status` field is a constant on every sign-up (e.g. always
+  // "primary") - it does NOT tell you if you're in the raid comp or benched.
+  // The real signal is the `class` field on your sign-up entry: a real class
+  // name (Warrior, Mage, Fire, ...) means you picked a comp slot, while a
+  // handful of special values mean you're not actually attending. Since real
+  // class names vary per server/game and can't be enumerated, we invert the
+  // check: anything NOT in this list counts as "attending".
+  nonAttendingClasses: (process.env.NON_ATTENDING_CLASSES || 'Bench,Absence,Tentative,Declined')
+    .split(',')
+    .map(s => s.trim().toLowerCase())
+    .filter(Boolean),
+  reminderMinutesBefore: parseInt(process.env.REMINDER_MINUTES_BEFORE || '15', 10),
+  deletePastEvents: (process.env.DELETE_PAST_EVENTS || 'true').toLowerCase() !== 'false',
+  pollIntervalMs: parseInt(process.env.POLL_INTERVAL_MINUTES || '5', 10) * 60 * 1000,
+  timezone: process.env.DEFAULT_TIMEZONE || 'Europe/Berlin',
+  google: {
+    clientId: requireEnv('GOOGLE_CLIENT_ID'),
+    clientSecret: requireEnv('GOOGLE_CLIENT_SECRET'),
+    refreshToken: requireEnv('GOOGLE_REFRESH_TOKEN'),
+  },
+  stateFile: 'watched_events.json',
+};

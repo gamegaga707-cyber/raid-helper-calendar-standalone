@@ -1,0 +1,22 @@
+{
+  "name": "raid-helper-calendar-bot",
+  "version": "1.0.0",
+  "description": "Discord bot that watches Raid-Helper events and auto-adds them to Google Calendar when you sign up",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "standalone": "node standalone.js",
+    "usertoken": "node usertoken.js",
+    "dev": "node index.js",
+    "oauth": "node get-refresh-token.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.15.3",
+    "dotenv": "^16.4.5",
+    "googleapis": "^139.0.0",
+    "open": "^11.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

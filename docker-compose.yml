@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  raid-helper-calendar:
+    build: .
+    container_name: raid-helper-calendar-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./watched_events.json:/app/watched_events.json
+      - ./credentials.json:/app/credentials.json:ro
+      - ./token.json:/app/token.json:ro
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# Alternative: Use a simple systemd service instead of Docker
+# See README.md for systemd setup

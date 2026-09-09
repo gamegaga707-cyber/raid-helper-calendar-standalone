@@ -1,0 +1,7 @@
+node_modules/
+.env
+watched_events.json
+credentials.json
+token.json
+*.log
+.DS_Store
