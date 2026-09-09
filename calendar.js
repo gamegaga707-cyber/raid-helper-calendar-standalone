@@ -52,6 +52,11 @@ function getEventEndTime(raidEvent, timezone) {
   const startTime = parseEventTime(raidEvent.unixtime || raidEvent.startTime || raidEvent.start_time || raidEvent.start, timezone);
   if (!startTime) return null;
 
+  // Fixed-duration mode: ignore all end fields, event is start + N minutes.
+  if (config.fixedDurationMinutes > 0) {
+    return new Date(startTime.getTime() + config.fixedDurationMinutes * 60 * 1000);
+  }
+
   // Prefer a REAL end field. `closingtime` is the sign-up deadline (often
   // BEFORE the raid starts) — only use it as end if it is after start.
   // Otherwise Google rejects the event with `timeRangeEmpty`.

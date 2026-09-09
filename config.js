@@ -39,6 +39,10 @@ module.exports = {
   quiet: process.env.QUIET === 'true' || process.argv.includes('--quiet'),
   // Pause between Raid-Helper API calls so big backlogs don't hit 429s.
   apiDelayMs: parseInt(process.env.API_DELAY_MS || '1200', 10),
+  // Fixed event length in minutes (e.g. 120). When set, calendar events are
+  // always start + this duration and all end-time fields from Raid-Helper
+  // are ignored. 0 = auto (real end if valid, else start + 2h).
+  fixedDurationMinutes: parseInt(process.env.EVENT_DURATION_MINUTES || '0', 10),
   standalone: {
     enabled: standaloneMode,
     eventIds: standaloneEventIds,
