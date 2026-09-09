@@ -12,6 +12,12 @@ function optionalEnv(name, defaultValue = '') {
   return process.env[name] || defaultValue;
 }
 
+function sanitizeToken(value) {
+  // Tolerate copy-paste artifacts: surrounding quotes (localStorage shows the
+  // value JSON-quoted) and stray whitespace/newlines.
+  return (value || '').trim().replace(/^["']+|["']+$/g, '').trim();
+}
+
 // Standalone (bot-less) mode: enabled when EVENT_IDS is set or STANDALONE_MODE=true.
 // In this mode no Discord bot token / guild is needed — event IDs are supplied
 // manually (right-click Raid-Helper message -> Copy Message ID) and all polling
@@ -37,7 +43,7 @@ module.exports = {
     // Personal-login (user-token) mode: read-only REST polling with your own
     // account. Needed only for `npm run usertoken`. WARNING: automating a user
     // account violates Discord ToS — read the header comment in usertoken.js.
-    userToken: optionalEnv('DISCORD_USER_TOKEN'),
+    userToken: sanitizeToken(optionalEnv('DISCORD_USER_TOKEN')),
     eventsChannelIds: (process.env.EVENTS_CHANNEL_IDS || '')
       .split(',')
       .map(s => s.trim())
