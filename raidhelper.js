@@ -1,10 +1,11 @@
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+// Node 18+ has a built-in global fetch — no dependency needed.
+const doFetch = (...args) => globalThis.fetch(...args);
 
 const RAID_HELPER_API_BASE = 'https://raid-helper.dev/api';
 
 async function fetchEvent(eventId) {
   const url = `${RAID_HELPER_API_BASE}/event/${eventId}`;
-  const response = await fetch(url, {
+  const response = await doFetch(url, {
     headers: {
       'Accept': 'application/json',
     },

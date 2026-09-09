@@ -171,8 +171,8 @@ async function pollEvents() {
 
 async function processEvent(event, stateData) {
   const raidEvent = await raidhelper.fetchEventWithRetry(event.id);
-  if (!raidEvent) {
-    log(`Event ${event.id} not found (404), marking skipped`);
+  if (!raidEvent || raidEvent.status === 'failed') {
+    log(`Event ${event.id} not found (deleted), marking skipped`);
     state.updateEventStatus(stateData, event.id, { status: 'skipped' });
     return;
   }
@@ -285,6 +285,10 @@ async function main() {
   log(`Watching: ${cachedChannels.map(c => `#${c.name}`).join(', ')}`);
 
   await pollEvents();
+  if (process.argv.includes('--once')) {
+    log('[Once] Single pass complete, exiting (for Alwaysdata Scheduled Tasks / cron).');
+    process.exit(0);
+  }
   log(`Starting poll interval: every ${config.pollIntervalMs / 60000} minutes (recommended >= 15 in this mode).`);
   pollInterval = setInterval(() => { if (!isPolling) pollEvents(); }, config.pollIntervalMs);
 }

@@ -11,8 +11,10 @@
     "oauth": "node get-refresh-token.js"
   },
   "dependencies": {
+    "dotenv": "^16.4.5"
+  },
+  "optionalDependencies": {
     "discord.js": "^14.15.3",
-    "dotenv": "^16.4.5",
     "googleapis": "^139.0.0",
     "open": "^11.0.2"
   },

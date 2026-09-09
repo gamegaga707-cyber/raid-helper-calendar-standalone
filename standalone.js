@@ -88,8 +88,8 @@ async function pollEvents() {
 async function processEvent(event, stateData) {
   const raidEvent = await raidhelper.fetchEventWithRetry(event.id);
 
-  if (!raidEvent) {
-    log(`Event ${event.id} not found (404), marking skipped`);
+  if (!raidEvent || raidEvent.status === 'failed') {
+    log(`Event ${event.id} not found (deleted), marking skipped`);
     state.updateEventStatus(stateData, event.id, { status: 'skipped' });
     return;
   }
@@ -190,7 +190,7 @@ function findMySignUp(raidEvent) {
   return null;
 }
 
-function main() {
+async function main() {
   if (!config.discord.myUserId) {
     log('ERROR: MY_DISCORD_USER_ID is required even in standalone mode (to detect your sign-up).');
     process.exit(1);
@@ -202,6 +202,11 @@ function main() {
     log(`[Standalone] Configured EVENT_IDS: ${config.standalone.eventIds.join(', ')}`);
   }
   syncEventIdsIntoState();
+  if (process.argv.includes('--once')) {
+    await pollEvents();
+    log('[Once] Single pass complete, exiting (for Alwaysdata Scheduled Tasks / cron).');
+    process.exit(0);
+  }
   startPolling();
 }
 
