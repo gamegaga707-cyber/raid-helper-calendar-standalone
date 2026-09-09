@@ -46,9 +46,17 @@ async function fetchEventWithRetry(eventId, retries = 3, delayMs = 1000) {
       return await fetchEvent(eventId);
     } catch (e) {
       lastError = e;
-      // Rate-limited: retrying immediately only makes it worse. Fail fast —
-      // the event stays pending and the next scheduled run picks it up.
-      if (e.status === 429) throw e;
+      if (e.status === 429) {
+        // Rate-limited: pause 15s and retry once — the window usually clears.
+        // If still limited, fail fast; the event stays pending and the next
+        // scheduled run picks it up.
+        if (i === 0) {
+          if (!quiet) console.log(`[RaidHelper] 429 rate-limited on ${eventId}, pausing 15s before one retry...`);
+          await sleep(15000);
+          continue;
+        }
+        throw e;
+      }
       if (i < retries - 1) {
         if (!quiet) console.log(`[RaidHelper] Retry ${i + 1}/${retries} for event ${eventId} after ${delayMs}ms`);
         await sleep(delayMs);
