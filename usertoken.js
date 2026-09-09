@@ -137,7 +137,7 @@ async function discoverEvents() {
       if (msg.author && msg.author.id === config.discord.raidHelperBotUserId
         && !state.isEventWatched(stateData, msg.id)) {
         state.addWatchedEvent(stateData, msg.id, extractTitle(msg) || `Event ${msg.id}`);
-        log(`[Discover] New event in #${ch.name}: ${extractTitle(msg) || msg.id} (${msg.id})`);
+        if (!config.quiet) log(`[Discover] New event in #${ch.name}: ${extractTitle(msg) || msg.id} (${msg.id})`);
         added++;
       }
     }
@@ -177,13 +177,13 @@ async function processEvent(event, stateData) {
     return;
   }
 
-  if (!event.lastPolled) {
+  if (!event.lastPolled && !config.quiet) {
     log(`[DEBUG] Raw Raid-Helper response for ${event.id}:`);
     console.dir(raidEvent, { depth: null });
-    if (raidEvent.title && event.title !== raidEvent.title) {
-      state.updateEventStatus(stateData, event.id, { title: raidEvent.title });
-      event.title = raidEvent.title;
-    }
+  }
+  if (raidEvent.title && event.title !== raidEvent.title) {
+    state.updateEventStatus(stateData, event.id, { title: raidEvent.title });
+    event.title = raidEvent.title;
   }
   state.updateEventStatus(stateData, event.id, { lastPolled: Date.now() });
 

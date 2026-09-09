@@ -33,6 +33,10 @@ const userTokenMode = (process.env.DISCORD_USER_TOKEN || '').trim().length > 0;
 const botlessMode = standaloneMode || userTokenMode;
 
 module.exports = {
+  // QUIET=true in .env (or --quiet flag): suppress per-event spam
+  // ([Discover] lines, raw API dumps). Keeps summaries, calendar
+  // add/remove actions and errors. Made for Alwaysdata job logs.
+  quiet: process.env.QUIET === 'true' || process.argv.includes('--quiet'),
   standalone: {
     enabled: standaloneMode,
     eventIds: standaloneEventIds,
