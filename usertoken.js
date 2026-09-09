@@ -158,6 +158,8 @@ async function pollEvents() {
       for (let i = 0; i < pending.length; i++) {
         // Gentle pacing so big backlogs don't trip Raid-Helper rate limits.
         if (i > 0) await raidhelper.sleep(config.apiDelayMs);
+        // Heartbeat so QUIET runs don't look frozen on big backlogs.
+        if (i > 0 && i % 25 === 0) log(`Progress: ${i}/${pending.length} events checked...`);
         try {
           counts[await processEvent(pending[i], stateData)]++;
         } catch (e) {

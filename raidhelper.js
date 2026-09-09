@@ -7,11 +7,23 @@ const RAID_HELPER_API_BASE = 'https://raid-helper.dev/api';
 
 async function fetchEvent(eventId) {
   const url = `${RAID_HELPER_API_BASE}/event/${eventId}`;
-  const response = await doFetch(url, {
-    headers: {
-      'Accept': 'application/json',
-    },
-  });
+  // 20s timeout so one hung request can't freeze a whole scheduled run.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 20000);
+  let response;
+  try {
+    response = await doFetch(url, {
+      headers: {
+        'Accept': 'application/json',
+      },
+      signal: controller.signal,
+    });
+  } catch (e) {
+    if (e.name === 'AbortError') throw new Error(`Raid-Helper API timeout for event ${eventId}`);
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
   
   if (!response.ok) {
     if (response.status === 404) {

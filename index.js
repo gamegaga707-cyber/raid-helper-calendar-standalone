@@ -173,6 +173,7 @@ async function pollEvents() {
   const counts = { added: 0, removed: 0, skipped: 0, unchanged: 0, errors: 0 };
   for (let i = 0; i < pendingEvents.length; i++) {
     if (i > 0) await raidhelper.sleep(config.apiDelayMs);
+    if (i > 0 && i % 25 === 0) log(`Progress: ${i}/${pendingEvents.length} events checked...`);
     try {
       counts[await processEvent(pendingEvents[i], stateData)]++;
     } catch (e) {
