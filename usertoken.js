@@ -92,18 +92,26 @@ async function discoverChannels() {
   }
 
   if (config.discord.eventsCategoryIds.length > 0) {
-    if (!config.discord.guildId) {
-      log('ERROR: EVENTS_CATEGORY_IDS is set but GUILD_ID is empty. Set GUILD_ID in .env.');
+    if (config.discord.guildIds.length === 0) {
+      log('ERROR: EVENTS_CATEGORY_IDS is set but no guild ID is configured. Set GUILD_ID or GUILD_IDS in .env.');
       process.exit(1);
     }
-    const all = await discordGet(`/guilds/${config.discord.guildId}/channels`);
-    // 0=text, 2=voice(with chat), 5=announcement, 13=stage, 15=forum
-    const chatTypes = new Set([0, 2, 5, 13, 15]);
-    for (const ch of all) {
-      if (ch.parent_id && config.discord.eventsCategoryIds.includes(ch.parent_id)
-        && chatTypes.has(ch.type) && !seen.has(ch.id)) {
-        seen.add(ch.id);
-        channels.push({ id: ch.id, name: ch.name || ch.id });
+    for (const guildId of config.discord.guildIds) {
+      let all;
+      try {
+        all = await discordGet(`/guilds/${guildId}/channels`);
+      } catch (e) {
+        log(`WARNING: cannot list channels of server ${guildId}: ${e.message}`);
+        continue;
+      }
+      // 0=text, 2=voice(with chat), 5=announcement, 13=stage, 15=forum
+      const chatTypes = new Set([0, 2, 5, 13, 15]);
+      for (const ch of all) {
+        if (ch.parent_id && config.discord.eventsCategoryIds.includes(ch.parent_id)
+          && chatTypes.has(ch.type) && !seen.has(ch.id)) {
+          seen.add(ch.id);
+          channels.push({ id: ch.id, name: ch.name || ch.id });
+        }
       }
     }
   }

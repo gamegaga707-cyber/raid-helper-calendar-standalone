@@ -46,6 +46,14 @@ module.exports = {
   discord: {
     botToken: botlessMode ? optionalEnv('DISCORD_BOT_TOKEN') : requireEnv('DISCORD_BOT_TOKEN'),
     guildId: botlessMode ? optionalEnv('GUILD_ID') : requireEnv('GUILD_ID'),
+    // Multiple servers: GUILD_IDS=111,222 (comma-separated). Legacy single
+    // GUILD_ID still works and is merged in. Only needed for
+    // EVENTS_CATEGORY_IDS lookup; explicit EVENTS_CHANNEL_IDS work
+    // across servers without any guild ID.
+    guildIds: [...new Set([
+      ...optionalEnv('GUILD_ID').split(',').map(s => s.trim()).filter(Boolean),
+      ...(process.env.GUILD_IDS || '').split(',').map(s => s.trim()).filter(Boolean),
+    ])],
     // Personal-login (user-token) mode: read-only REST polling with your own
     // account. Needed only for `npm run usertoken`. WARNING: automating a user
     // account violates Discord ToS — read the header comment in usertoken.js.
