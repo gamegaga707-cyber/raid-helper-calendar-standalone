@@ -50,11 +50,19 @@ function parseEventTime(rawTime, timezone) {
 
 function getEventEndTime(raidEvent, timezone) {
   const startTime = parseEventTime(raidEvent.unixtime || raidEvent.startTime || raidEvent.start_time || raidEvent.start, timezone);
-  const endTime = parseEventTime(raidEvent.closingtime || raidEvent.endTime || raidEvent.end_time || raidEvent.end, timezone);
-
   if (!startTime) return null;
-  // Default to 2 hours if no explicit end time, same rule used when the event was created
-  return endTime || new Date(startTime.getTime() + 2 * 60 * 60 * 1000);
+
+  // Prefer a REAL end field. `closingtime` is the sign-up deadline (often
+  // BEFORE the raid starts) — only use it as end if it is after start.
+  // Otherwise Google rejects the event with `timeRangeEmpty`.
+  const realEnd = parseEventTime(raidEvent.endTime || raidEvent.end_time || raidEvent.end || raidEvent.endtime, timezone);
+  if (realEnd && realEnd.getTime() > startTime.getTime()) return realEnd;
+
+  const closing = parseEventTime(raidEvent.closingtime || raidEvent.closing_time, timezone);
+  if (closing && closing.getTime() > startTime.getTime()) return closing;
+
+  // Default to 2 hours if no usable end time, same rule used when the event was created
+  return new Date(startTime.getTime() + 2 * 60 * 60 * 1000);
 }
 
 function buildCalendarEvent(raidEvent, timezone, reminderMinutes, userSpec, raidLeader) {
