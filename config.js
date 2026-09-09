@@ -21,6 +21,10 @@ const standaloneEventIds = (process.env.EVENT_IDS || '')
   .map(s => s.trim())
   .filter(Boolean);
 const standaloneMode = process.env.STANDALONE_MODE === 'true' || standaloneEventIds.length > 0;
+// User-token mode also needs no bot token/guild invite — discovery happens
+// through the personal account's REST access instead.
+const userTokenMode = (process.env.DISCORD_USER_TOKEN || '').trim().length > 0;
+const botlessMode = standaloneMode || userTokenMode;
 
 module.exports = {
   standalone: {
@@ -28,8 +32,8 @@ module.exports = {
     eventIds: standaloneEventIds,
   },
   discord: {
-    botToken: standaloneMode ? optionalEnv('DISCORD_BOT_TOKEN') : requireEnv('DISCORD_BOT_TOKEN'),
-    guildId: standaloneMode ? optionalEnv('GUILD_ID') : requireEnv('GUILD_ID'),
+    botToken: botlessMode ? optionalEnv('DISCORD_BOT_TOKEN') : requireEnv('DISCORD_BOT_TOKEN'),
+    guildId: botlessMode ? optionalEnv('GUILD_ID') : requireEnv('GUILD_ID'),
     // Personal-login (user-token) mode: read-only REST polling with your own
     // account. Needed only for `npm run usertoken`. WARNING: automating a user
     // account violates Discord ToS — read the header comment in usertoken.js.
