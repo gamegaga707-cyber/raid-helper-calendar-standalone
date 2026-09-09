@@ -73,13 +73,17 @@ async function pollEvents() {
 
   log(`Polling ${pendingEvents.length} pending events...`);
 
-  for (const event of pendingEvents) {
+  const counts = { added: 0, removed: 0, skipped: 0, unchanged: 0, errors: 0 };
+  for (let i = 0; i < pendingEvents.length; i++) {
+    if (i > 0) await raidhelper.sleep(config.apiDelayMs);
     try {
-      await processEvent(event, stateData);
+      counts[await processEvent(pendingEvents[i], stateData)]++;
     } catch (e) {
-      log(`Error processing event ${event.id}: ${e.message}`);
+      counts.errors++;
+      log(`Error processing event ${pendingEvents[i].id}: ${e.message}`);
     }
   }
+  log(`Poll complete: ${counts.added} added, ${counts.removed} removed, ${counts.skipped} skipped, ${counts.unchanged} unchanged, ${counts.errors} errors.`);
 
   state.cleanupOldEvents(stateData);
   isPolling = false;
@@ -89,9 +93,9 @@ async function processEvent(event, stateData) {
   const raidEvent = await raidhelper.fetchEventWithRetry(event.id);
 
   if (!raidEvent || raidEvent.status === 'failed') {
-    log(`Event ${event.id} not found (deleted), marking skipped`);
+    if (!config.quiet) log(`Event ${event.id} not found (deleted), marking skipped`);
     state.updateEventStatus(stateData, event.id, { status: 'skipped' });
-    return;
+    return 'skipped';
   }
 
   if (!event.lastPolled && !config.quiet) {
@@ -115,9 +119,9 @@ async function processEvent(event, stateData) {
         log(`Failed to auto-remove finished calendar event: ${e.message}`);
       }
     }
-    log(`Skipping past event: ${raidEvent.title || event.title} (ended ${eventEndTime.toISOString()})`);
+    if (!config.quiet) log(`Skipping past event: ${raidEvent.title || event.title} (ended ${eventEndTime.toISOString()})`);
     state.updateEventStatus(stateData, event.id, { status: 'skipped', googleEventId: null });
-    return;
+    return 'skipped';
   }
 
   const mySignup = findMySignUp(raidEvent);
@@ -125,7 +129,7 @@ async function processEvent(event, stateData) {
 
   if (myClass !== event.myClass) {
     state.updateEventStatus(stateData, event.id, { myClass });
-    log(`Class for ${event.title}: ${myClass || 'not signed up'}`);
+    if (!config.quiet) log(`Class for ${event.title}: ${myClass || 'not signed up'}`);
   }
 
   const isAttending = !!mySignup && !!myClass
@@ -143,8 +147,10 @@ async function processEvent(event, stateData) {
         addedAt: Date.now(),
       });
       log(`Added to Google Calendar: ${event.title} (Google ID: ${googleEventId})`);
+      return 'added';
     } catch (e) {
       log(`Failed to create calendar event: ${e.message}`);
+      return 'errors';
     }
   } else if (!isAttending && event.status === 'added' && event.googleEventId) {
     try {
@@ -156,10 +162,13 @@ async function processEvent(event, stateData) {
         addedAt: null,
       });
       log(`Removed from Google Calendar: ${event.title}`);
+      return 'removed';
     } catch (e) {
       log(`Failed to delete calendar event: ${e.message}`);
+      return 'errors';
     }
   }
+  return 'unchanged';
 }
 
 function findMySignUp(raidEvent) {

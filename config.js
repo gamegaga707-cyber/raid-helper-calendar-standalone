@@ -37,6 +37,8 @@ module.exports = {
   // ([Discover] lines, raw API dumps). Keeps summaries, calendar
   // add/remove actions and errors. Made for Alwaysdata job logs.
   quiet: process.env.QUIET === 'true' || process.argv.includes('--quiet'),
+  // Pause between Raid-Helper API calls so big backlogs don't hit 429s.
+  apiDelayMs: parseInt(process.env.API_DELAY_MS || '800', 10),
   standalone: {
     enabled: standaloneMode,
     eventIds: standaloneEventIds,
