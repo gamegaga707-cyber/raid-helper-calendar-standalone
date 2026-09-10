@@ -53,7 +53,8 @@ function getEventEndTime(raidEvent, timezone) {
   if (!startTime) return null;
 
   // Fixed-duration mode: ignore all end fields, event is start + N minutes.
-  if (config.fixedDurationMinutes > 0) {
+  // N = 0 gives end == start (calendar shows start time only).
+  if (config.fixedDurationMinutes >= 0) {
     return new Date(startTime.getTime() + config.fixedDurationMinutes * 60 * 1000);
   }
 
